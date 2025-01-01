@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "superpaimoncyclone:block/paimon_cyclone_block"
+  }
+}

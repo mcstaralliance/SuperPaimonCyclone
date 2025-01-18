@@ -5,9 +5,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.TickingBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.EnergyStorage;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraft.world.level.block.Blocks;
@@ -24,29 +22,41 @@ public class PaimonCycloneBlockEntity extends BlockEntity {
         super(SuperPaimonCyclone.PAIMON_CYCLONE_BLOCK_ENTITY.get(), pos, state);
     }
 
+    /**
+     * 方块实体的 tick 方法，由 Minecraft 自动调用
+     */
     public static void tick(Level level, BlockPos pos, BlockState state, PaimonCycloneBlockEntity blockEntity) {
         if (level == null || level.isClientSide) return;
 
         // 检查能量和输入物品
-        if (blockEntity.getEnergyStorage().getEnergyStored() >= 100 && blockEntity.isPolishedAndesiteInInput()) {
-            blockEntity.setWorkTime(blockEntity.getWorkTime() + 1); // workTime++
-            blockEntity.getEnergyStorage().extractEnergy(100, false);
+        if (blockEntity.energyStorage.getEnergyStored() >= 100 && blockEntity.isPolishedAndesiteInInput()) {
+            // 仅当能量足够时，增加工作时间
+            blockEntity.workTime++;
+            blockEntity.energyStorage.extractEnergy(100, false);
 
-            if (blockEntity.getWorkTime() >= blockEntity.MAX_WORK_TIME) {
-                blockEntity.setWorkTime(0);
+            if (blockEntity.workTime >= blockEntity.MAX_WORK_TIME) {
+                blockEntity.workTime = 0;
                 blockEntity.processCycle();
             }
+        } else {
+            // 如果能量不足或输入不满足，重置工作时间
+            blockEntity.workTime = 0;
         }
-        level.scheduleTick(pos, state.getBlock(), 20); // 每 20 ticks 调度一次
-
     }
 
+    /**
+     * 检查输入槽中是否有抛光安山岩
+     */
     private boolean isPolishedAndesiteInInput() {
         ItemStack stack = inventory.getStackInSlot(0);
         return stack.getItem() == Blocks.POLISHED_ANDESITE.asItem();
     }
+
+    /**
+     * 处理一个完整的生产周期
+     */
     private void processCycle() {
-        // 一次性输出所有矿石
+        // TODO 修改为配置文件自定义矿石列表
         NonNullList<ItemStack> oreItems = NonNullList.create();
         oreItems.add(new ItemStack(Blocks.COAL_ORE));
         oreItems.add(new ItemStack(Blocks.IRON_ORE));
@@ -56,24 +66,20 @@ public class PaimonCycloneBlockEntity extends BlockEntity {
         oreItems.add(new ItemStack(Blocks.REDSTONE_ORE));
         oreItems.add(new ItemStack(Blocks.EMERALD_ORE));
 
-        // 放入输出槽
+        // 检查输出槽是否有足够空间
+        for (ItemStack ore : oreItems) {
+            if (!inventory.insertItem(1, ore, true).isEmpty()) {
+                // 如果无法完全插入矿石，终止生产，避免丢失物品
+                return;
+            }
+        }
+
+        // 将矿石实际插入到输出槽
         for (ItemStack ore : oreItems) {
             inventory.insertItem(1, ore, false);
         }
 
-        // 消耗输入物品
+        // 消耗一个输入物品
         inventory.extractItem(0, 1, false);
     }
-    public int getWorkTime() {
-        return workTime;
-    }
-
-    public void setWorkTime(int workTime) {
-        this.workTime = workTime;
-    }
-
-    public EnergyStorage getEnergyStorage() {
-        return energyStorage;
-    }
-
 }

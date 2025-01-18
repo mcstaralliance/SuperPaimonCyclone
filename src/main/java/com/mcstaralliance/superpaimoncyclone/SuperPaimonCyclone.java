@@ -5,6 +5,8 @@ import com.mcstaralliance.superpaimoncyclone.block.SuperPaimonCycloneBlock;
 import com.mcstaralliance.superpaimoncyclone.block.entity.PaimonCycloneBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.FurnaceMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -44,11 +46,16 @@ public class SuperPaimonCyclone {
     );
     public static final RegistryObject<BlockEntityType<PaimonCycloneBlockEntity>> PAIMON_CYCLONE_BLOCK_ENTITY = BLOCK_ENTITIES.register("paimon_cyclone_block_entity",
             () -> BlockEntityType.Builder.of(PaimonCycloneBlockEntity::new, SuperPaimonCyclone.PAIMON_CYCLONE_BLOCK.get()).build(null));
+    public static final DeferredRegister<MenuType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MOD_ID);
+
+    public static final RegistryObject<MenuType<FurnaceMenu>> FURNACE_MENU = CONTAINERS.register("furnace_menu",
+            () -> new MenuType<>(FurnaceMenu::new));
     public SuperPaimonCyclone(FMLJavaModLoadingContext context) {
         BLOCKS.register(context.getModEventBus());
         ITEMS.register(context.getModEventBus());
         CREATIVE_TABS.register(context.getModEventBus());
         BLOCK_ENTITIES.register(context.getModEventBus());
+        CONTAINERS.register(context.getModEventBus());
     }
     @SubscribeEvent
     public void buildContents(BuildCreativeModeTabContentsEvent event) {
